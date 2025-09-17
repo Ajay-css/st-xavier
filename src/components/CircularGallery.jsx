@@ -402,23 +402,27 @@ class App {
       width: this.container.clientWidth,
       height: this.container.clientHeight
     };
+
     this.renderer.setSize(this.screen.width, this.screen.height);
     this.camera.perspective({
       aspect: this.screen.width / this.screen.height
     });
+
     const fov = (this.camera.fov * Math.PI) / 180;
     const height = 2 * Math.tan(fov / 2) * this.camera.position.z;
     const width = height * this.camera.aspect;
     this.viewport = { width, height };
 
-    if (this.medias) {
+    // ✅ Safe loop for all medias
+    if (Array.isArray(this.medias)) {
       this.medias.forEach(media => media.onResize({ screen: this.screen, viewport: this.viewport }));
     }
 
     // 🔥 Responsive tweak for small screens
-    if (this.screen.width < 768) {
+    if (Array.isArray(this.medias) && this.screen.width < 768) {
       this.medias.forEach(media => {
-        media.scale = this.screen.height / 2200; // smaller card scale
+        // Smaller card scale
+        media.scale = this.screen.height / 2200;
         media.plane.scale.y = (this.viewport.height * (700 * media.scale)) / this.screen.height;
         media.plane.scale.x = (this.viewport.width * (500 * media.scale)) / this.screen.width;
         media.plane.program.uniforms.uPlaneSizes.value = [media.plane.scale.x, media.plane.scale.y];
@@ -428,15 +432,15 @@ class App {
         media.widthTotal = media.width * media.length;
         media.x = media.width * media.index;
 
-        // shrink + soften title text 🔽
+        // Shrink + soften title text
         if (media.title && media.title.mesh) {
           const aspect = media.title.mesh.scale.x / media.title.mesh.scale.y;
-          const textHeight = media.plane.scale.y * 0.08; // much smaller text height
+          const textHeight = media.plane.scale.y * 0.08;
           const textWidth = textHeight * aspect;
           media.title.mesh.scale.set(textWidth, textHeight, 1);
           media.title.mesh.position.y = -media.plane.scale.y * 0.5 - textHeight * 0.5 - 0.02;
 
-          // reduce opacity a bit for subtle look
+          // subtle opacity fix
           if (media.title.mesh.program && media.title.mesh.program.uniforms.tMap) {
             media.title.mesh.program.transparent = true;
           }
